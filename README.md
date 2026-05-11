@@ -93,6 +93,21 @@ If the engine/control plane is not listening at `ws://127.0.0.1:49134`, iiiBar s
 IIIBAR_CONTROL_URL=ws://127.0.0.1:49134 IIIBAR_WORKER_DIR=/path/to/worker swift run iiiBar
 ```
 
+## DMG Release
+
+Build a local `.app` and `.dmg`:
+
+```bash
+./scripts/package-macos.sh
+```
+
+Artifacts are written to:
+
+- `build/iiiBar.app`
+- `build/iiiBar.dmg`
+
+This v1 package bundles the built iiibar worker and production worker dependencies. It still requires Node.js 20 or newer on the user's machine because the worker runs as a Node process. The app is ad-hoc signed, not Apple-notarized, so macOS may show the usual unsigned app warning.
+
 ## Notes
 
 - A target engine with `memory` or `both` OTEL exporters gives iiiBar logs, traces, and metrics.

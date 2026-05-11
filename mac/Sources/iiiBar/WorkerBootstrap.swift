@@ -22,6 +22,9 @@ final class WorkerBootstrap {
         guard let workerDirectory = resolveWorkerDirectory() else {
             throw BootstrapError.workerDirectoryMissing
         }
+        guard let nodePath = resolveExecutable("node") else {
+            throw BootstrapError.nodeMissing
+        }
         let nodeModules = workerDirectory.appendingPathComponent("node_modules")
         guard FileManager.default.fileExists(atPath: nodeModules.path) else {
             throw BootstrapError.dependenciesMissing(workerDirectory.path)
@@ -33,9 +36,8 @@ final class WorkerBootstrap {
 
         let nextPipe = Pipe()
         let nextProcess = Process()
-        let pnpmPath = resolveExecutable("pnpm")
-        nextProcess.executableURL = URL(fileURLWithPath: pnpmPath ?? "/usr/bin/env")
-        nextProcess.arguments = pnpmPath == nil ? ["pnpm", "start"] : ["start"]
+        nextProcess.executableURL = URL(fileURLWithPath: nodePath)
+        nextProcess.arguments = ["dist/index.js"]
         nextProcess.currentDirectoryURL = workerDirectory
         nextProcess.standardOutput = nextPipe
         nextProcess.standardError = nextPipe
@@ -94,6 +96,9 @@ final class WorkerBootstrap {
         candidates.append(current.appendingPathComponent("worker").standardizedFileURL)
         if let executable = Bundle.main.executableURL {
             let executableDirectory = executable.deletingLastPathComponent()
+            if let resources = Bundle.main.resourceURL {
+                candidates.append(resources.appendingPathComponent("worker").standardizedFileURL)
+            }
             candidates.append(executableDirectory.appendingPathComponent("../../../../worker").standardizedFileURL)
             candidates.append(executableDirectory.appendingPathComponent("../../../../../worker").standardizedFileURL)
         }
@@ -127,6 +132,7 @@ final class WorkerBootstrap {
 
 enum BootstrapError: LocalizedError {
     case workerDirectoryMissing
+    case nodeMissing
     case dependenciesMissing(String)
     case buildMissing(String)
 
@@ -134,6 +140,8 @@ enum BootstrapError: LocalizedError {
         switch self {
         case .workerDirectoryMissing:
             return "Could not find iiibar-worker. Set IIIBAR_WORKER_DIR to iii-experimental/iiibar/worker."
+        case .nodeMissing:
+            return "Node.js 20 or newer is required to run iiibar-worker."
         case .dependenciesMissing(let path):
             return "iiibar-worker dependencies are missing. Run: cd \(path) && pnpm install"
         case .buildMissing(let path):
