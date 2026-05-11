@@ -1,0 +1,25 @@
+{
+  "name": "@iii-experimental/iiibar-worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "iii-native worker backing iiiBar.",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsx src/index.ts",
+    "start": "node dist/index.js",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "iii-sdk": "^0.11.0-next.5"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "vitest": "^2.1.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
