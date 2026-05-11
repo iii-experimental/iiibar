@@ -2,6 +2,7 @@
   "name": "@iii-experimental/iiibar-worker",
   "version": "0.2.0",
   "private": true,
+  "license": "Apache-2.0",
   "type": "module",
   "description": "iii-native worker backing iiiBar.",
   "scripts": {

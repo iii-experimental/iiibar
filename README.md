@@ -126,3 +126,7 @@ This is required for the unsigned experimental release. A future notarized relea
 - CPU and RAM are available for local profiles with engine-reported worker PIDs. Remote profiles use any SDK metrics exposed by the target engine.
 - Local start works only for saved local profiles with a configured `binaryPath`, and requires `IIIBAR_ENABLE_LIFECYCLE=1`.
 - Stop only affects processes iiiBar started for saved local profiles.
+
+## License
+
+Apache-2.0
