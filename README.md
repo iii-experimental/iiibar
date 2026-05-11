@@ -108,6 +108,15 @@ Artifacts are written to:
 
 This v1 package bundles the built iiibar worker and production worker dependencies. It still requires Node.js 20 or newer on the user's machine because the worker runs as a Node process. The app is ad-hoc signed, not Apple-notarized, so macOS may show the usual unsigned app warning.
 
+If macOS blocks the downloaded app with "Apple could not verify iiiBar.app", remove the quarantine flag after dragging the app to `/Applications`:
+
+```bash
+xattr -dr com.apple.quarantine /Applications/iiiBar.app
+open /Applications/iiiBar.app
+```
+
+This is required for the unsigned experimental release. A future notarized release needs an Apple Developer ID certificate and Apple notary credentials.
+
 ## Notes
 
 - A target engine with `memory` or `both` OTEL exporters gives iiiBar logs, traces, and metrics.

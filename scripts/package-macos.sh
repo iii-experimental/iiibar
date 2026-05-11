@@ -64,6 +64,7 @@ cp "$ROOT/worker/pnpm-lock.yaml" "$WORKER_RESOURCES/pnpm-lock.yaml"
 cp -R "$ROOT/worker/dist" "$WORKER_RESOURCES/dist"
 CI=1 NO_UPDATE_NOTIFIER=1 pnpm --dir "$WORKER_RESOURCES" install --prod --frozen-lockfile --ignore-scripts
 
+xattr -cr "$APP"
 codesign --force --deep --sign - "$APP"
 
 cp -R "$APP" "$STAGE/iiiBar.app"
