@@ -36,7 +36,9 @@ This project stays external:
 
 ## Runtime Summary
 
-`iiibar::runtime::summary` calls existing engine primitives for worker, function, trigger, and health state. For local profiles it also enriches connected worker PIDs with targeted macOS process stats, so iiiBar can show CPU, RAM, instance count, process count, endpoints, runtime, PID, host, version, function count, active invocations, and uptime without changing iii Engine.
+`iiibar::runtime::summary` calls existing engine primitives for worker, function, trigger, and health state. CPU, RAM, instance count, process count, endpoints, runtime, PID, host, version, function count, active invocations, and uptime come from `engine::workers::list`, `engine::functions::list`, `engine::triggers::list`, and `engine::health::check`.
+
+For the selected local engine, iiiBar reuses the same iii SDK worker connection that registered `iiibar::*`. It does not register a second empty "monitor" worker against the same engine. For remote profiles, set `transport: "bridge"` when the control engine has `iii-bridge` configured; iiiBar will invoke remote functions through `bridge.invoke`.
 
 ## Brand Colors
 

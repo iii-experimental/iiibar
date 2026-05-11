@@ -21,10 +21,12 @@ export function normalizeProfile(input: Partial<EngineProfile>): EngineProfile {
     id,
     name: input.name?.trim() || id,
     kind: input.kind === 'remote' ? 'remote' : 'local',
+    transport: input.transport === 'bridge' ? 'bridge' : 'direct',
     host: input.host?.trim() || defaultProfile.host,
     httpPort: normalizePort(input.httpPort, defaultProfile.httpPort),
     bridgePort: normalizePort(input.bridgePort, defaultProfile.bridgePort),
     streamPort: normalizePort(input.streamPort, defaultProfile.streamPort),
+    bridgeInvokeFunctionId: input.bridgeInvokeFunctionId?.trim() || undefined,
     pollingIntervalSeconds: Math.max(1, Number(input.pollingIntervalSeconds || 5)),
   }
 }

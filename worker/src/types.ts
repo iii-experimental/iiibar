@@ -1,13 +1,16 @@
 export type EngineKind = 'local' | 'remote'
+export type EngineTransport = 'direct' | 'bridge'
 
 export type EngineProfile = {
   id: string
   name: string
   kind: EngineKind
+  transport?: EngineTransport
   host: string
   httpPort: number
   bridgePort: number
   streamPort: number
+  bridgeInvokeFunctionId?: string
   binaryPath?: string
   configPath?: string
   workingDirectory?: string

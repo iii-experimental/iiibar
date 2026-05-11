@@ -1,8 +1,8 @@
 import { defaultProfile, normalizeProfile, stateScope } from './defaults.js'
-import type { IiiLikeClient } from './engine-client.js'
+import type { IiiClient } from './engine-client.js'
 import type { EngineProfile, ProfileListResult } from './types.js'
 
-export async function listProfiles(control: IiiLikeClient): Promise<ProfileListResult> {
+export async function listProfiles(control: IiiClient): Promise<ProfileListResult> {
   try {
     const profiles = await control.trigger<{ scope: string }, EngineProfile[]>({
       function_id: 'state::list',
@@ -23,7 +23,7 @@ export async function listProfiles(control: IiiLikeClient): Promise<ProfileListR
   }
 }
 
-export async function saveProfile(control: IiiLikeClient, input: Partial<EngineProfile>): Promise<EngineProfile> {
+export async function saveProfile(control: IiiClient, input: Partial<EngineProfile>): Promise<EngineProfile> {
   const profile = normalizeProfile(input)
   await control.trigger<{ scope: string; key: string; value: EngineProfile }, unknown>({
     function_id: 'state::set',
@@ -38,7 +38,7 @@ export async function saveProfile(control: IiiLikeClient, input: Partial<EngineP
 }
 
 export async function resolveProfile(
-  control: IiiLikeClient,
+  control: IiiClient,
   input: { profile?: Partial<EngineProfile>; profileId?: string },
 ): Promise<EngineProfile> {
   if (input.profile) return normalizeProfile(input.profile)
@@ -48,7 +48,7 @@ export async function resolveProfile(
 }
 
 export async function resolveStoredProfile(
-  control: IiiLikeClient,
+  control: IiiClient,
   input: { profile?: Partial<EngineProfile>; profileId?: string },
 ): Promise<EngineProfile> {
   if (input.profile) {

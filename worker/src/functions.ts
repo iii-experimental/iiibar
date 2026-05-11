@@ -1,4 +1,4 @@
-import { getTargetEngine, type IiiLikeClient } from './engine-client.js'
+import { triggerEngine, type IiiClient } from './engine-client.js'
 import { resolveProfile, resolveStoredProfile, listProfiles, saveProfile } from './profile-store.js'
 import { startEngine, stopEngine } from './process-controller.js'
 import { runtimeSummary } from './runtime.js'
@@ -19,73 +19,72 @@ import type {
   TracesResponse,
 } from './types.js'
 
-export function registerIiiBarFunctions(control: IiiLikeClient): void {
-  control.registerService?.({
+export function registerIiiBarFunctions(control: IiiClient): void {
+  control.registerService({
     id: 'iiibar',
     name: 'iiiBar',
     description: 'macOS menu bar control plane for iii engines',
   })
 
-  control.registerFunction?.('iiibar::profiles::list', async () => listProfiles(control), {
+  control.registerFunction('iiibar::profiles::list', async () => listProfiles(control), {
     description: 'List iiiBar engine profiles from iii state.',
   })
-  control.registerFunction?.('iiibar::profiles::save', async (input: Partial<EngineProfile>) => saveProfile(control, input), {
+  control.registerFunction('iiibar::profiles::save', async (input: Partial<EngineProfile>) => saveProfile(control, input), {
     description: 'Save an iiiBar engine profile through iii state.',
   })
-  control.registerFunction?.('iiibar::engines::status', async (input: { profileId?: string; profile?: Partial<EngineProfile> }) => {
+  control.registerFunction('iiibar::engines::status', async (input: { profileId?: string; profile?: Partial<EngineProfile> }) => {
     const profile = await resolveProfile(control, input || {})
     return engineStatus(profile)
   })
-  control.registerFunction?.('iiibar::engines::start', async (input: { profileId?: string; profile?: Partial<EngineProfile> }) => {
+  control.registerFunction('iiibar::engines::start', async (input: { profileId?: string; profile?: Partial<EngineProfile> }) => {
     const profile = await resolveStoredProfile(control, input || {})
     return startEngine(profile)
   })
-  control.registerFunction?.('iiibar::engines::stop', async (input: { profileId?: string; profile?: Partial<EngineProfile> }) => {
+  control.registerFunction('iiibar::engines::stop', async (input: { profileId?: string; profile?: Partial<EngineProfile> }) => {
     const profile = await resolveStoredProfile(control, input || {})
     return stopEngine(profile)
   })
-  control.registerFunction?.('iiibar::telemetry::summary', async (input: { profileId?: string; profile?: Partial<EngineProfile> }) => {
+  control.registerFunction('iiibar::telemetry::summary', async (input: { profileId?: string; profile?: Partial<EngineProfile> }) => {
     const profile = await resolveProfile(control, input || {})
     return telemetrySummary(profile)
   })
-  control.registerFunction?.('iiibar::runtime::summary', async (input: { profileId?: string; profile?: Partial<EngineProfile> }) => {
+  control.registerFunction('iiibar::runtime::summary', async (input: { profileId?: string; profile?: Partial<EngineProfile> }) => {
     const profile = await resolveProfile(control, input || {})
     return runtimeSummary(profile)
   })
-  control.registerFunction?.('iiibar::logs::recent', async (input: { profileId?: string; profile?: Partial<EngineProfile>; limit?: number }) => {
+  control.registerFunction('iiibar::logs::recent', async (input: { profileId?: string; profile?: Partial<EngineProfile>; limit?: number }) => {
     const profile = await resolveProfile(control, input || {})
     return recentLogs(profile, input?.limit)
   })
-  control.registerFunction?.('iiibar::traces::recent', async (input: { profileId?: string; profile?: Partial<EngineProfile>; limit?: number }) => {
+  control.registerFunction('iiibar::traces::recent', async (input: { profileId?: string; profile?: Partial<EngineProfile>; limit?: number }) => {
     const profile = await resolveProfile(control, input || {})
     return recentTraces(profile, input?.limit)
   })
-  control.registerFunction?.('iiibar::diagnostics::copy', async (input: { profileId?: string; profile?: Partial<EngineProfile> }) => {
+  control.registerFunction('iiibar::diagnostics::copy', async (input: { profileId?: string; profile?: Partial<EngineProfile> }) => {
     const profile = await resolveProfile(control, input || {})
     return diagnostics(profile)
   })
 }
 
 export async function engineStatus(profile: EngineProfile): Promise<EngineStatus> {
-  const target = getTargetEngine(profile)
   try {
     const [health, workers, functions, triggers] = await Promise.all([
-      target.trigger<Record<string, never>, HealthStatus>({
+      triggerEngine<Record<string, never>, HealthStatus>(profile, {
         function_id: 'engine::health::check',
         payload: {},
         timeoutMs: 3000,
       }),
-      target.trigger<Record<string, never>, unknown>({
+      triggerEngine<Record<string, never>, unknown>(profile, {
         function_id: 'engine::workers::list',
         payload: {},
         timeoutMs: 3000,
       }),
-      target.trigger<{ include_internal: boolean }, unknown>({
+      triggerEngine<{ include_internal: boolean }, unknown>(profile, {
         function_id: 'engine::functions::list',
         payload: { include_internal: false },
         timeoutMs: 3000,
       }),
-      target.trigger<{ include_internal: boolean }, unknown>({
+      triggerEngine<{ include_internal: boolean }, unknown>(profile, {
         function_id: 'engine::triggers::list',
         payload: { include_internal: false },
         timeoutMs: 3000,
@@ -119,17 +118,16 @@ export async function engineStatus(profile: EngineProfile): Promise<EngineStatus
 }
 
 export async function telemetrySummary(profile: EngineProfile): Promise<TelemetrySummary> {
-  const target = getTargetEngine(profile)
   try {
     const [metrics, logs, traces, alerts] = await Promise.all([
-      target.trigger<Record<string, never>, MetricsResponse>({
+      triggerEngine<Record<string, never>, MetricsResponse>(profile, {
         function_id: 'engine::metrics::list',
         payload: {},
         timeoutMs: 3000,
       }),
       recentLogs(profile, 100),
       recentTraces(profile, 100),
-      target.trigger<Record<string, never>, AlertsResponse>({
+      triggerEngine<Record<string, never>, AlertsResponse>(profile, {
         function_id: 'engine::alerts::list',
         payload: {},
         timeoutMs: 3000,
@@ -146,9 +144,8 @@ export async function telemetrySummary(profile: EngineProfile): Promise<Telemetr
 }
 
 export async function recentLogs(profile: EngineProfile, limit = 50): Promise<LogsResponse> {
-  const target = getTargetEngine(profile)
   const normalizedLimit = normalizeLimit(limit)
-  const response = await target.trigger<{ offset: number; limit: number; severity_min?: number }, LogsResponse>({
+  const response = await triggerEngine<{ offset: number; limit: number; severity_min?: number }, LogsResponse>(profile, {
     function_id: 'engine::logs::list',
     payload: {
       offset: 0,
@@ -164,9 +161,8 @@ export async function recentLogs(profile: EngineProfile, limit = 50): Promise<Lo
 }
 
 export async function recentTraces(profile: EngineProfile, limit = 50): Promise<TracesResponse> {
-  const target = getTargetEngine(profile)
   const normalizedLimit = normalizeLimit(limit)
-  const response = await target.trigger<{ offset: number; limit: number; sort_by: string; sort_order: string }, TracesResponse>({
+  const response = await triggerEngine<{ offset: number; limit: number; sort_by: string; sort_order: string }, TracesResponse>(profile, {
     function_id: 'engine::traces::list',
     payload: {
       offset: 0,

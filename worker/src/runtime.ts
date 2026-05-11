@@ -1,6 +1,4 @@
-import { execFile } from 'node:child_process'
-import { promisify } from 'node:util'
-import { getTargetEngine } from './engine-client.js'
+import { triggerEngine } from './engine-client.js'
 import { wsUrl } from './defaults.js'
 import type {
   EngineProfile,
@@ -12,8 +10,6 @@ import type {
   WorkerMetrics,
 } from './types.js'
 
-const execFileAsync = promisify(execFile)
-
 type RuntimeInputs = {
   workersRaw?: unknown
   functionsRaw?: unknown
@@ -24,39 +20,37 @@ type RuntimeInputs = {
 }
 
 export async function runtimeSummary(profile: EngineProfile): Promise<RuntimeSummary> {
-  const target = getTargetEngine(profile)
   try {
     const [workersRaw, functionsRaw, triggersRaw, health] = await Promise.all([
-      target.trigger<Record<string, never>, unknown>({
+      triggerEngine<Record<string, never>, unknown>(profile, {
         function_id: 'engine::workers::list',
         payload: {},
         timeoutMs: 3000,
       }),
-      target.trigger<{ include_internal: boolean }, unknown>({
+      triggerEngine<{ include_internal: boolean }, unknown>(profile, {
         function_id: 'engine::functions::list',
         payload: { include_internal: true },
         timeoutMs: 3000,
       }),
-      target.trigger<{ include_internal: boolean }, unknown>({
+      triggerEngine<{ include_internal: boolean }, unknown>(profile, {
         function_id: 'engine::triggers::list',
         payload: { include_internal: true },
         timeoutMs: 3000,
       }),
-      target.trigger<Record<string, never>, HealthStatus>({
+      triggerEngine<Record<string, never>, HealthStatus>(profile, {
         function_id: 'engine::health::check',
         payload: {},
         timeoutMs: 3000,
       }),
     ])
 
-    const summary = buildRuntimeSummary(profile, {
+    return buildRuntimeSummary(profile, {
       workersRaw,
       functionsRaw,
       triggersRaw,
       health,
       reachable: true,
     })
-    return enrichLocalProcessMetrics(profile, summary)
   } catch (error) {
     return buildRuntimeSummary(profile, {
       reachable: false,
@@ -180,55 +174,6 @@ function groupCount(values: string[]): Record<string, number> {
 function longestUptime(workers: RuntimeWorker[]): number | undefined {
   const values = workers.map((worker) => worker.uptimeSeconds).filter((value): value is number => typeof value === 'number')
   return values.length > 0 ? Math.max(...values) : undefined
-}
-
-async function enrichLocalProcessMetrics(profile: EngineProfile, summary: RuntimeSummary): Promise<RuntimeSummary> {
-  if (profile.kind !== 'local' || !isLocalHost(profile.host)) return summary
-  const pids = [...new Set(summary.workers.map((worker) => worker.pid).filter((pid): pid is number => typeof pid === 'number'))]
-  if (pids.length === 0) return summary
-
-  try {
-    const { stdout } = await execFileAsync('/bin/ps', ['-o', 'pid=,pcpu=,rss=', '-p', pids.join(',')], {
-      timeout: 1500,
-      maxBuffer: 64 * 1024,
-    })
-    const processMetrics = parseProcessMetrics(stdout)
-    if (processMetrics.size === 0) return summary
-    const workers = summary.workers.map((worker) => {
-      const metrics = worker.pid === undefined ? undefined : processMetrics.get(worker.pid)
-      if (!metrics) return worker
-      return {
-        ...worker,
-        cpuPercent: metrics.cpuPercent,
-        memoryRssBytes: metrics.memoryRssBytes,
-      }
-    })
-    return {
-      ...summary,
-      workers,
-      resources: summarizeResources(workers),
-    }
-  } catch {
-    return summary
-  }
-}
-
-function parseProcessMetrics(stdout: string): Map<number, { cpuPercent: number; memoryRssBytes: number }> {
-  const metrics = new Map<number, { cpuPercent: number; memoryRssBytes: number }>()
-  for (const line of stdout.split('\n')) {
-    const parts = line.trim().split(/\s+/)
-    if (parts.length < 3) continue
-    const pid = Number(parts[0])
-    const cpuPercent = Number(parts[1])
-    const rssKb = Number(parts[2])
-    if (!Number.isFinite(pid) || !Number.isFinite(cpuPercent) || !Number.isFinite(rssKb)) continue
-    metrics.set(pid, { cpuPercent, memoryRssBytes: rssKb * 1024 })
-  }
-  return metrics
-}
-
-function isLocalHost(host: string): boolean {
-  return host === '127.0.0.1' || host === 'localhost' || host === '::1'
 }
 
 function countFunctions(input: unknown): number {
