@@ -38,6 +38,8 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
   <string>iiiBar</string>
   <key>CFBundleIdentifier</key>
   <string>dev.iii.iiibar</string>
+  <key>CFBundleIconFile</key>
+  <string>iiiBar</string>
   <key>CFBundleInfoDictionaryVersion</key>
   <string>6.0</string>
   <key>CFBundleName</key>
@@ -45,9 +47,9 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
   <key>CFBundlePackageType</key>
   <string>APPL</string>
   <key>CFBundleShortVersionString</key>
-  <string>0.2.1</string>
+  <string>0.2.2</string>
   <key>CFBundleVersion</key>
-  <string>3</string>
+  <string>4</string>
   <key>LSMinimumSystemVersion</key>
   <string>13.0</string>
   <key>LSUIElement</key>
@@ -57,6 +59,8 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
 </dict>
 </plist>
 PLIST
+
+cp "$ROOT/mac/Resources/iiiBar.icns" "$APP/Contents/Resources/iiiBar.icns"
 
 mkdir -p "$WORKER_RESOURCES"
 cp "$ROOT/worker/package.json" "$WORKER_RESOURCES/package.json"
