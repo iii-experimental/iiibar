@@ -46,6 +46,7 @@ struct ContentView: View {
             }
             .buttonStyle(.borderless)
             .help("Refresh")
+            quitButton
         }
         .padding(.horizontal, 18)
         .padding(.vertical, 14)
@@ -246,6 +247,18 @@ struct ContentView: View {
             .padding(.vertical, 5)
             .background(cardBackground)
             .clipShape(Capsule())
+    }
+
+    private var quitButton: some View {
+        Button {
+            state.quit()
+        } label: {
+            Image(systemName: "xmark.circle.fill")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(BrandColors.alert)
+        }
+        .buttonStyle(.borderless)
+        .help("Quit iiiBar")
     }
 
     private func profileRow(_ profile: EngineProfile) -> some View {

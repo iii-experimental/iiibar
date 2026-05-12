@@ -26,6 +26,13 @@ actor IiiFunctionClient {
         receive()
     }
 
+    func disconnect() {
+        task?.cancel(with: .goingAway, reason: nil)
+        task = nil
+        pending.values.forEach { $0.resume(throwing: ClientError.disconnected) }
+        pending.removeAll()
+    }
+
     func invoke<T: Decodable>(_ functionId: String, payload: EncodablePayload = EncodablePayload.empty) async throws -> T {
         connect()
         guard let task else { throw ClientError.disconnected }

@@ -133,6 +133,17 @@ final class AppState: ObservableObject {
         }
     }
 
+    func quit() {
+        workerMessage = "Quitting iiiBar"
+        workerBootstrap.stop()
+        Task {
+            await client.disconnect()
+            await MainActor.run {
+                NSApp.terminate(nil)
+            }
+        }
+    }
+
     private func lifecycle(_ functionId: String) async {
         guard canCallIiiBarFunctions, let profileId = selectedProfileId else { return }
         do {
