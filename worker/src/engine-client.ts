@@ -14,7 +14,7 @@ export function connectControlEngine(url: string): IiiClient {
     otel: {
       enabled: true,
       serviceName: 'iiibar-worker',
-      serviceVersion: '0.2.2',
+      serviceVersion: '0.2.3',
     },
     telemetry: {
       project_name: 'iiibar',
